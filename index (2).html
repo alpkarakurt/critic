@@ -1,0 +1,1845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CRITIC Method – Interactive Presentation & Live Classroom Suite</title>
+  
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- KaTeX -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <!-- Standalone QR Code Generator (Çevrimdışı da Çalışan Yerel Motor) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <style>
+    :root {
+      --bg-dark: #0a0f1d;
+      --bg-card: #121a2f;
+      --bg-card-hover: #18233e;
+      --border-color: #243253;
+      --accent-cyan: #06b6d4;
+      --accent-indigo: #6366f1;
+      --accent-purple: #a855f7;
+      --accent-emerald: #10b981;
+      --accent-rose: #f43f5e;
+      --accent-amber: #f59e0b;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: radial-gradient(circle at 50% 0%, #172554 0%, var(--bg-dark) 70%);
+      color: var(--text-main);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+      user-select: none;
+    }
+
+    /* TOAST */
+    #toastContainer {
+      position: fixed;
+      top: 80px;
+      right: 25px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: none;
+    }
+    .toast {
+      background: rgba(15, 23, 42, 0.96);
+      border: 1px solid var(--accent-amber);
+      color: #fff;
+      padding: 0.85rem 1.3rem;
+      border-radius: 10px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      font-size: 0.95rem;
+      font-weight: 700;
+      transform: translateX(120%);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .toast.show { transform: translateX(0); }
+
+    /* HEADER */
+    header {
+      background: rgba(10, 15, 29, 0.88);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-color);
+      padding: 0.85rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+
+    .brand { display: flex; align-items: center; gap: 0.8rem; }
+    .brand-badge {
+      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-indigo));
+      padding: 0.35rem 0.75rem;
+      border-radius: 8px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      font-size: 0.85rem;
+      color: #fff;
+    }
+    .brand-title { font-size: 1.25rem; font-weight: 700; letter-spacing: -0.02em; }
+
+    .header-actions { display: flex; align-items: center; gap: 0.75rem; }
+
+    .btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+    }
+    .btn:hover {
+      background: var(--bg-card-hover);
+      border-color: var(--accent-cyan);
+      transform: translateY(-1px);
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-indigo));
+      border: none;
+      color: #fff;
+    }
+    .btn-accent {
+      background: linear-gradient(135deg, var(--accent-amber), var(--accent-rose));
+      border: none;
+      color: #fff;
+    }
+
+    /* STEP PROGRESS BAR */
+    .stepper-nav {
+      background: rgba(18, 26, 47, 0.75);
+      border-bottom: 1px solid var(--border-color);
+      padding: 0.65rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      overflow-x: auto;
+      gap: 0.4rem;
+    }
+    .step-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 0.8rem;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
+    }
+    .step-item.active {
+      color: #fff;
+      background: rgba(6, 182, 212, 0.15);
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 12px rgba(6, 182, 212, 0.25);
+    }
+    .step-item.completed { color: var(--accent-emerald); }
+    .step-num {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: var(--border-color);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.72rem; font-weight: 700;
+    }
+    .step-item.active .step-num { background: var(--accent-cyan); color: #000; }
+
+    /* MAIN CONTAINER */
+    main {
+      flex: 1;
+      padding: 1.8rem 2rem;
+      max-width: 1650px;
+      margin: 0 auto;
+      width: 100%;
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 1.8rem;
+    }
+    @media (max-width: 1180px) { main { grid-template-columns: 1fr; } }
+
+    .stage-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 1.8rem;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      min-height: 600px;
+    }
+
+    .stage-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 1rem;
+      gap: 1rem;
+    }
+    .stage-title {
+      font-size: 1.55rem;
+      font-weight: 800;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .stage-title span { color: var(--accent-cyan); }
+
+    .formula-badge {
+      background: rgba(99, 102, 241, 0.15);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      border-radius: 10px;
+      padding: 0.55rem 1.1rem;
+      font-size: 1rem;
+      color: #e0e7ff;
+    }
+
+    /* SIDEBAR */
+    .sidebar-panel { display: flex; flex-direction: column; gap: 1.25rem; }
+    .info-box {
+      background: linear-gradient(180deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.9) 100%);
+      border: 1px solid var(--border-color);
+      border-left: 4px solid var(--accent-cyan);
+      border-radius: 14px;
+      padding: 1.4rem;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+    }
+    .info-box-title {
+      font-size: 0.82rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 1px; color: var(--accent-cyan); margin-bottom: 0.6rem;
+      display: flex; align-items: center; gap: 0.4rem;
+    }
+    .info-box-text { font-size: 0.98rem; line-height: 1.55; color: #e2e8f0; }
+
+    .controls-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      padding: 1.25rem;
+    }
+    .controls-box h4 {
+      font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.8px;
+      color: var(--text-muted); margin-bottom: 0.9rem;
+    }
+    .nav-btn-group { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+
+    /* TABLES & EDITABLE CELLS */
+    .table-container {
+      overflow-x: auto;
+      margin-top: 0.5rem;
+      border-radius: 10px;
+      border: 1px solid var(--border-color);
+      background: rgba(10, 15, 29, 0.4);
+    }
+    table { width: 100%; border-collapse: collapse; text-align: center; font-family: 'JetBrains Mono', monospace; }
+    th, td { padding: 0.75rem 0.9rem; border: 1px solid var(--border-color); font-size: 0.92rem; }
+    th { background: rgba(24, 35, 62, 0.85); color: #e2e8f0; font-weight: 700; font-family: 'Plus Jakarta Sans', sans-serif; }
+    .criterion-th { min-width: 175px; position: relative; }
+    .criterion-th.disabled-col, td.disabled-col { background: rgba(15, 23, 42, 0.6) !important; opacity: 0.38; filter: grayscale(1); }
+    .strike-text { text-decoration: line-through; color: var(--text-muted) !important; }
+
+    .toggle-pill {
+      display: inline-flex; align-items: center; gap: 4px; font-size: 0.72rem;
+      padding: 0.2rem 0.5rem; border-radius: 999px; cursor: pointer;
+      border: 1px solid transparent; font-weight: 700;
+    }
+    .toggle-pill.active { background: rgba(16, 185, 129, 0.18); border-color: var(--accent-emerald); color: #34d399; }
+    .toggle-pill.inactive { background: rgba(244, 63, 94, 0.18); border-color: var(--accent-rose); color: #fb7185; }
+
+    .type-select {
+      background: #0f172a; border: 1px solid var(--border-color); color: #38bdf8;
+      border-radius: 6px; padding: 0.25rem 0.45rem; font-size: 0.78rem; font-weight: 600;
+      outline: none; margin-top: 0.35rem; display: block; width: 100%; cursor: pointer;
+    }
+    .type-select.cost { color: var(--accent-rose); }
+
+    input.matrix-cell {
+      background: transparent; border: 1px solid transparent; color: #fff;
+      font-family: 'JetBrains Mono', monospace; font-size: 1rem; text-align: center;
+      width: 100%; padding: 0.35rem; border-radius: 6px;
+    }
+    input.matrix-cell:focus { background: #1e293b; border-color: var(--accent-cyan); outline: none; }
+
+    .heatmap-cell { cursor: pointer; transition: transform 0.15s ease; font-weight: 600; }
+    .heatmap-cell:hover { transform: scale(1.08); z-index: 5; }
+
+    .chart-box { width: 100%; height: 380px; position: relative; display: flex; align-items: center; justify-content: center; }
+
+    /* RANKING & WHAT-IF */
+    .what-if-panel {
+      background: linear-gradient(135deg, rgba(30, 41, 59, 0.5) 0%, rgba(15, 23, 42, 0.8) 100%);
+      border: 1px solid var(--border-color); border-radius: 14px; padding: 1.25rem; margin-top: 1.5rem;
+    }
+    .what-if-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+    .what-if-title { font-size: 1.05rem; font-weight: 800; color: var(--accent-amber); display: flex; align-items: center; gap: 0.5rem; }
+    .slider-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1.2rem; }
+    .slider-card { background: rgba(18, 26, 47, 0.8); border: 1px solid var(--border-color); border-radius: 10px; padding: 0.85rem 1rem; }
+    .slider-label { display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 700; color: #cbd5e1; margin-bottom: 0.4rem; }
+    .slider-val-tag { font-family: 'JetBrains Mono', monospace; color: var(--accent-cyan); }
+    input[type=range] { width: 100%; accent-color: var(--accent-cyan); cursor: pointer; }
+
+    .rank-list { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 0.5rem; }
+    .rank-item {
+      background: #0f172a; border: 1px solid var(--border-color); border-radius: 12px;
+      padding: 0.85rem 1.25rem; display: flex; align-items: center; gap: 1.2rem;
+    }
+    .rank-item.top-1 {
+      border: 2px solid var(--accent-amber);
+      background: linear-gradient(90deg, rgba(245, 158, 11, 0.12) 0%, rgba(15, 23, 42, 0.85) 100%);
+    }
+    .rank-badge {
+      width: 36px; height: 36px; border-radius: 50%; background: var(--bg-card);
+      border: 2px solid var(--border-color); display: flex; align-items: center;
+      justify-content: center; font-size: 1.05rem; font-weight: 800;
+    }
+    .rank-item.top-1 .rank-badge { background: var(--accent-amber); color: #000; border-color: #fde68a; }
+    .rank-bar-bg { flex: 1; height: 12px; background: #1e293b; border-radius: 6px; overflow: hidden; }
+    .rank-bar-fill { height: 100%; border-radius: 6px; background: linear-gradient(90deg, var(--accent-cyan), var(--accent-indigo)); }
+    .rank-item.top-1 .rank-bar-fill { background: linear-gradient(90deg, var(--accent-amber), #fbbf24); }
+    .rank-score { font-family: 'JetBrains Mono', monospace; font-size: 1.1rem; font-weight: 700; min-width: 85px; text-align: right; }
+
+    /* KAHOOT QUIZ STYLES */
+    .quiz-container { display: flex; flex-direction: column; gap: 1.5rem; height: 100%; }
+    .timer-circle {
+      width: 60px; height: 60px; border-radius: 50%;
+      background: var(--bg-dark); border: 4px solid var(--accent-cyan);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem; font-weight: 800; color: #fff;
+    }
+    .timer-circle.warning { border-color: var(--accent-rose); color: var(--accent-rose); animation: pulse 0.5s infinite alternate; }
+    @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.1); } }
+
+    .question-title { font-size: 1.45rem; font-weight: 800; text-align: center; padding: 1rem; color: #fff; line-height: 1.4; }
+    .quiz-options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; flex: 1; }
+    .quiz-btn {
+      border: none; border-radius: 14px; padding: 1.5rem; color: #fff;
+      font-size: 1.25rem; font-weight: 700; display: flex; align-items: center;
+      gap: 1rem; cursor: pointer; text-align: left; transition: transform 0.15s;
+    }
+    .quiz-btn:hover { transform: scale(1.02); }
+    .btn-red { background: #e11d48; box-shadow: 0 6px 0 #9f1239; }
+    .btn-blue { background: #2563eb; box-shadow: 0 6px 0 #1e40af; }
+    .btn-yellow { background: #d97706; box-shadow: 0 6px 0 #b45309; }
+    .btn-green { background: #059669; box-shadow: 0 6px 0 #047857; }
+    .quiz-btn.correct-highlight { outline: 5px solid #fff; transform: scale(1.04); z-index: 5; }
+    .quiz-btn.dimmed { opacity: 0.35; filter: grayscale(0.6); }
+
+    /* PODIUM */
+    .podium-box { display: flex; justify-content: center; align-items: flex-end; gap: 1.5rem; height: 360px; margin-top: 1.5rem; }
+    .podium-step {
+      display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+      width: 140px; border-radius: 16px 16px 0 0; position: relative;
+    }
+    .podium-1 { height: 260px; background: linear-gradient(180deg, #f59e0b, #b45309); }
+    .podium-2 { height: 200px; background: linear-gradient(180deg, #94a3b8, #475569); }
+    .podium-3 { height: 160px; background: linear-gradient(180deg, #b45309, #78350f); }
+    .podium-name { font-size: 1.1rem; font-weight: 800; color: #fff; margin-bottom: 0.5rem; text-align: center; }
+    .podium-score { font-size: 0.85rem; color: #f8fafc; font-family: 'JetBrains Mono', monospace; }
+
+    /* MODAL */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.85);
+      backdrop-filter: blur(8px); display: none; align-items: center;
+      justify-content: center; z-index: 1000;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-body {
+      background: var(--bg-card); border: 1px solid var(--border-color);
+      border-radius: 20px; padding: 2rem; max-width: 600px; width: 92%;
+      text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+      max-height: 90vh; overflow-y: auto;
+    }
+
+    /* CONFETTI CANVAS */
+    #confettiCanvas {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none; z-index: 99999;
+    }
+
+    /* LIVE IN-APP PHONE SIMULATOR (SLIDE-OVER DRAWER) */
+    #phoneDrawer {
+      position: fixed; top: 0; right: -420px; width: 380px; height: 100vh;
+      background: #0f172a; border-left: 2px solid var(--accent-cyan);
+      box-shadow: -10px 0 30px rgba(0,0,0,0.7); z-index: 2000;
+      transition: right 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex; flex-direction: column;
+    }
+    #phoneDrawer.open { right: 0; }
+    .phone-drawer-header {
+      padding: 1rem; background: #1e293b; border-bottom: 1px solid var(--border-color);
+      display: flex; justify-content: space-between; align-items: center;
+    }
+
+    /* MOBILE PARTICIPANT SCREEN */
+    #mobileApp {
+      display: none; padding: 1.5rem; max-width: 480px; margin: 0 auto; width: 100%;
+    }
+    .mobile-card {
+      background: var(--bg-card); border: 1px solid var(--border-color);
+      border-radius: 16px; padding: 1.5rem; margin-bottom: 1.2rem;
+    }
+  </style>
+</head>
+<body>
+
+  <canvas id="confettiCanvas"></canvas>
+  <div id="toastContainer"></div>
+
+  <!-- QR & SESSION MODAL -->
+  <div class="modal-overlay" id="qrModal">
+    <div class="modal-body">
+      <h2 style="font-size:1.5rem; font-weight:800; margin-bottom:0.4rem; color:#fff;">📱 Canlı Katılım Oturumu</h2>
+      
+      <!-- Warning if running on file:/// -->
+      <div id="fileProtocolWarning" style="display:none; background:rgba(244, 63, 94, 0.15); border:1px solid var(--accent-rose); border-radius:10px; padding:0.75rem; margin-bottom:1rem; text-align:left; font-size:0.82rem; color:#fecdd3;">
+        <b>⚠️ Dikkat:</b> Dosyayı yerel bilgisayardan (<code>file:///</code>) açtınız. Öğrencilerin telefonları bu yerel dosyaya doğrudan bağlanamaz.
+        <br>&bull; <b>Çözüm 1:</b> Sağdaki <b>"📱 Ekran Telefon Simülatörü"</b> düğmesini kullanın.
+        <br>&bull; <b>Çözüm 2:</b> Dosyayı GitHub Pages veya yerel ağda (VS Code Live Server) açıp linki aşağıya yazın.
+      </div>
+
+      <!-- QR Canvas Container (Çevrimdışı da Çalışır) -->
+      <div style="background:#fff; padding:14px; border-radius:14px; display:inline-block; margin:0.5rem auto 1rem;">
+        <div id="qrcodeCanvas"></div>
+      </div>
+
+      <!-- Dynamic Link Configuration -->
+      <div style="margin-bottom:1.2rem; text-align:left;">
+        <label style="font-size:0.75rem; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Katılım Linki (Düzenlenebilir):</label>
+        <div style="display:flex; gap:0.4rem; margin-top:3px;">
+          <input type="text" id="manualUrlInput" style="flex:1; background:#0f172a; border:1px solid var(--border-color); color:var(--accent-cyan); font-family:'JetBrains Mono'; font-size:0.8rem; padding:0.4rem 0.6rem; border-radius:6px;" onchange="updateQRCodeFromInput()">
+          <button class="btn btn-primary" onclick="updateQRCodeFromInput()" style="padding:0.4rem 0.8rem; font-size:0.75rem;">Yenile</button>
+        </div>
+      </div>
+
+      <!-- Session Live Counter -->
+      <div style="background:#0f172a; padding:0.85rem 1rem; border-radius:12px; margin-bottom:1.2rem; display:flex; justify-content:space-around; align-items:center;">
+        <div>
+          <div style="font-size:0.75rem; color:var(--text-muted);">Bağlı Katılımcı</div>
+          <div style="font-size:1.6rem; font-weight:800; color:var(--accent-emerald);" id="modalParticipantCount">0</div>
+        </div>
+        <button class="btn btn-primary" onclick="simulateStudentVotes()">⚡ +25 Öğrenci Simüle Et</button>
+      </div>
+
+      <div style="display:flex; gap:0.6rem; justify-content:center; flex-wrap:wrap;">
+        <button class="btn btn-accent" onclick="togglePhoneDrawer(); closeQRModal();">📱 Ekran Telefon Simülatörü</button>
+        <button class="btn" onclick="openManualIntuitionEntry()">✏️ Elle Puan Gir</button>
+        <button class="btn btn-primary" onclick="closeQRModal()">Kapat ✕</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- LIVE PHONE SIMULATOR DRAWER (SUNUM ESNASINDA YANDA AÇILAN CANLI TELEFON) -->
+  <div id="phoneDrawer">
+    <div class="phone-drawer-header">
+      <span style="font-weight:700; color:#fff; font-size:0.9rem;">📱 Canlı Öğrenci Telefonu (Simülatör)</span>
+      <button onclick="togglePhoneDrawer()" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:1.2rem;">✕</button>
+    </div>
+    <div style="flex:1; overflow-y:auto; padding:1.2rem;">
+      <div class="mobile-card" style="padding:1rem;">
+        <label style="font-size:0.8rem; font-weight:700; color:#cbd5e1;">Rumuz:</label>
+        <input type="text" id="simVoterName" value="Simüle Öğrenci" style="width:100%; background:#0f172a; border:1px solid var(--border-color); color:#fff; padding:0.4rem; border-radius:6px; font-size:0.85rem; margin-top:4px;">
+        <div id="simSlidersContainer" style="display:flex; flex-direction:column; gap:0.9rem; margin:1rem 0;"></div>
+        <button class="btn btn-primary" onclick="submitSimVote()" style="width:100%; justify-content:center; padding:0.6rem;">✓ Oyu Projeksiyona Gönder</button>
+      </div>
+
+      <!-- Quiz Answer Buttons in Simulator -->
+      <div class="mobile-card" style="padding:1rem; text-align:center;">
+        <div style="font-size:0.8rem; font-weight:700; color:#cbd5e1; margin-bottom:8px;">Quiz Anlık Cevap Verme:</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;">
+          <button class="quiz-btn btn-red" onclick="registerVoteFromSim(0)" style="justify-content:center; height:50px; font-size:1.2rem;">▲</button>
+          <button class="quiz-btn btn-blue" onclick="registerVoteFromSim(1)" style="justify-content:center; height:50px; font-size:1.2rem;">◆</button>
+          <button class="quiz-btn btn-yellow" onclick="registerVoteFromSim(2)" style="justify-content:center; height:50px; font-size:1.2rem;">●</button>
+          <button class="quiz-btn btn-green" onclick="registerVoteFromSim(3)" style="justify-content:center; height:50px; font-size:1.2rem;">■</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MANUAL INTUITION ENTRY MODAL -->
+  <div class="modal-overlay" id="manualEntryModal">
+    <div class="modal-body" style="max-width: 480px; text-align: left;">
+      <h3 style="color:#fff; font-size:1.3rem; margin-bottom:0.6rem;">✏️ Sınıf Ortalamalarını Elle Girin</h3>
+      <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:1.2rem;">
+        İnternetsiz amfide el kaldırarak aldığınız 1-10 arası ortalama puanları girin:
+      </p>
+      <div id="manualInputsContainer" style="display:flex; flex-direction:column; gap:0.8rem; margin-bottom:1.5rem;"></div>
+      <div style="display:flex; justify-content:flex-end; gap:0.6rem;">
+        <button class="btn" onclick="closeManualModal()">İptal</button>
+        <button class="btn btn-primary" onclick="saveManualIntuition()">Kaydet & Göster</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PRESENTER APP CONTAINER -->
+  <div id="presenterApp" style="display: flex; flex-direction: column; min-height: 100vh;">
+    <!-- HEADER -->
+    <header>
+      <div class="brand">
+        <div class="brand-badge">CRITIC SUITE</div>
+        <div class="brand-title">Management Mathematics &bull; Interactive Multi-Criteria Decision Lab</div>
+      </div>
+      <div class="header-actions">
+        <button class="btn" onclick="togglePhoneDrawer()" style="border-color:var(--accent-amber); color:var(--accent-amber);">
+          📱 Simülatör
+        </button>
+        <button class="btn" onclick="openQRModal()" style="border-color:var(--accent-cyan); color:var(--accent-cyan);">
+          📷 QR Kod (<span id="headerVoterCount">0</span>)
+        </button>
+        <button class="btn" onclick="exportToCSV()" title="Export results as CSV">📥 CSV</button>
+        <button class="btn" onclick="toggleFullScreen()" title="Projection Fullscreen">⛶ Fullscreen</button>
+      </div>
+    </header>
+
+    <!-- STEPPER NAV -->
+    <div class="stepper-nav" id="stepperNav">
+      <div class="step-item active" onclick="goToStep(1)"><span class="step-num">1</span> Decision Matrix</div>
+      <div class="step-item" onclick="goToStep(2)"><span class="step-num">2</span> Normalization</div>
+      <div class="step-item" onclick="goToStep(3)"><span class="step-num">3</span> Std. Dev (σ)</div>
+      <div class="step-item" onclick="goToStep(4)"><span class="step-num">4</span> Correlation (r)</div>
+      <div class="step-item" onclick="goToStep(5)"><span class="step-num">5</span> Information (C)</div>
+      <div class="step-item" onclick="goToStep(6)"><span class="step-num">6</span> Weights (w)</div>
+      <div class="step-item" onclick="goToStep(7)" style="border-color: rgba(245, 158, 11, 0.4);"><span class="step-num" style="background:var(--accent-amber); color:#000;">★</span> Siz mi, CRITIC mi?</div>
+      <div class="step-item" onclick="goToStep(8)"><span class="step-num">8</span> Ranking & What-If</div>
+      <div class="step-item" onclick="goToStep(9)"><span class="step-num">9</span> Benchmark</div>
+      <div class="step-item" onclick="goToStep(10)" style="border-color: rgba(244, 63, 94, 0.4);"><span class="step-num" style="background:var(--accent-rose); color:#fff;">Q</span> Final Quiz!</div>
+    </div>
+
+    <!-- MAIN STAGE -->
+    <main>
+      <div class="stage-card" id="stageContent"></div>
+
+      <!-- SIDEBAR -->
+      <div class="sidebar-panel">
+        <div class="info-box">
+          <div class="info-box-title"><span>💡</span> Bu Adım Ne Anlatıyor?</div>
+          <div class="info-box-text" id="explanationText"></div>
+        </div>
+
+        <div class="controls-box">
+          <h4>Sunum Kontrolü</h4>
+          <div class="nav-btn-group">
+            <button class="btn" id="prevBtn" onclick="prevStep()">← Geri (Prev)</button>
+            <button class="btn btn-primary" id="nextBtn" onclick="nextStep()">İleri (Next) →</button>
+          </div>
+        </div>
+
+        <div class="controls-box">
+          <h4>Canlı Sınıf Durumu</h4>
+          <div style="font-size: 0.9rem; line-height: 1.8; color: var(--text-muted);">
+            <div>Bağlı Katılımcı: <b id="statVoterCount" style="color:#fff;">0</b></div>
+            <div>Oylanan Kriter: <b id="statActiveCritCount" style="color:var(--accent-cyan);">4</b></div>
+            <div>En Etkili Kriter: <b id="statDivergenceTag" style="color:var(--accent-rose);">-</b></div>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- FOOTER -->
+    <footer>
+      <div>CRITIC Presentation Tool & Live Audience Interaction Engine</div>
+      <div>Klavye: <span class="kbd">←</span> / <span class="kbd">→</span> Adımlar &bull; <span class="kbd">Q</span> QR Kod &bull; <span class="kbd">F</span> Tam Ekran</div>
+    </footer>
+  </div>
+
+  <!-- STANDALONE MOBILE CLIENT (When opened directly on a phone via link) -->
+  <div id="mobileApp">
+    <div style="text-align:center; margin-bottom:1.5rem;">
+      <div class="brand-badge" style="display:inline-block; margin-bottom:0.5rem;">CRITIC CANLI KATILIM</div>
+      <h2 style="font-size:1.4rem; font-weight:800; color:#fff;">Kriter Ağırlık Oylaması</h2>
+      <p style="font-size:0.85rem; color:var(--text-muted);">Sizce tedarikçi seçiminde hangi kriter ne kadar önemli?</p>
+    </div>
+
+    <div id="mobileVoteScreen" class="mobile-card">
+      <div style="margin-bottom:1rem;">
+        <label style="font-size:0.85rem; font-weight:700; color:#cbd5e1;">Adınız / Rumuzunuz:</label>
+        <input type="text" id="voterNickname" placeholder="Örn: Ayşe" style="width:100%; background:#0f172a; border:1px solid var(--border-color); color:#fff; padding:0.6rem; border-radius:8px; margin-top:0.3rem;">
+      </div>
+      <div id="mobileSlidersContainer" style="display:flex; flex-direction:column; gap:1.2rem; margin-bottom:1.5rem;"></div>
+      <button class="btn btn-primary" onclick="submitMobileVote()" style="width:100%; justify-content:center; padding:0.85rem; font-size:1rem;">
+        ✓ Oylarımı Gönder
+      </button>
+    </div>
+
+    <div id="mobileQuizScreen" class="mobile-card" style="display:none; text-align:center;">
+      <h3 style="font-size:1.2rem; color:#fff; margin-bottom:0.5rem;">Oyunuz Alındı! 🎉</h3>
+      <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:1.5rem;">Projeksiyon ekranındaki soruları takip edin ve doğru renge dokunun:</p>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.9rem;">
+        <button class="quiz-btn btn-red" onclick="submitMobileQuizAnswer(0)" style="justify-content:center; height:85px; font-size:1.5rem;">▲</button>
+        <button class="quiz-btn btn-blue" onclick="submitMobileQuizAnswer(1)" style="justify-content:center; height:85px; font-size:1.5rem;">◆</button>
+        <button class="quiz-btn btn-yellow" onclick="submitMobileQuizAnswer(2)" style="justify-content:center; height:85px; font-size:1.5rem;">●</button>
+        <button class="quiz-btn btn-green" onclick="submitMobileQuizAnswer(3)" style="justify-content:center; height:85px; font-size:1.5rem;">■</button>
+      </div>
+      <div id="mobileAnswerConfirmed" style="margin-top:1rem; font-weight:700; color:var(--accent-emerald); font-size:0.9rem; display:none;">
+        ✓ Cevabınız iletildi!
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ==========================================
+    // 1. STATE & DATA
+    // ==========================================
+    const DEFAULT_DATA = {
+      criteria: [
+        { id: 'c1', name: 'Price ($)', type: 'cost', enabled: true },
+        { id: 'c2', name: 'Quality Score', type: 'benefit', enabled: true },
+        { id: 'c3', name: 'Lead Time (Days)', type: 'cost', enabled: true },
+        { id: 'c4', name: 'Service Level', type: 'benefit', enabled: true }
+      ],
+      alternatives: [
+        { id: 'a1', name: 'Supplier T1', values: [250, 8, 5, 7] },
+        { id: 'a2', name: 'Supplier T2', values: [200, 6, 7, 8] },
+        { id: 'a3', name: 'Supplier T3', values: [300, 9, 4, 6] },
+        { id: 'a4', name: 'Supplier T4', values: [220, 7, 6, 9] },
+        { id: 'a5', name: 'Supplier T5', values: [280, 8, 3, 5] }
+      ]
+    };
+
+    let state = JSON.parse(JSON.stringify(DEFAULT_DATA));
+    let baselineData = JSON.parse(JSON.stringify(DEFAULT_DATA));
+    let currentStep = 1;
+    let activeChart = null;
+    let selectedSimAltIdx = 0;
+    let lastRankingOrder = [];
+    let qrcodeObj = null;
+
+    let classVotes = [];
+    let manualClassWeights = null;
+    let isCriticRevealed = false;
+
+    const QUIZ_QUESTIONS = [
+      {
+        q: "İki kriter arasındaki korelasyon çok yüksekse CRITIC bu kriterlerin ağırlığına ne yapar?",
+        options: ["Azaltır (bilgi tekrar ediyor)", "Artırır", "Değiştirmez", "Sıfırlar"],
+        correct: 0,
+        symbols: ["▲", "◆", "●", "■"]
+      },
+      {
+        q: "Tüm alternatiflerde aynı değeri alan (σ = 0) bir kriterin ağırlığı nedir?",
+        options: ["1/n", "0", "En yüksek ağırlık", "Hesaplanamaz"],
+        correct: 1,
+        symbols: ["▲", "◆", "●", "■"]
+      },
+      {
+        q: "CRITIC ağırlıkları neye dayanır?",
+        options: ["Uzman görüşüne", "Karar vericinin tercihine", "Verinin kendi yapısına (objektif)", "Rastgele atamaya"],
+        correct: 2,
+        symbols: ["▲", "◆", "●", "■"]
+      },
+      {
+        q: "Maliyet kriteri nasıl normalize edilir?",
+        options: ["(x − min)/(max − min)", "x/max", "(max − x)/(max − min)", "x/Σx"],
+        correct: 2,
+        symbols: ["▲", "◆", "●", "■"]
+      }
+    ];
+
+    let currentQuizIdx = 0;
+    let quizTimer = 20;
+    let quizInterval = null;
+    let quizAnswers = [0, 0, 0, 0];
+    let quizState = 'question';
+    let leaderboard = [
+      { name: "Merve K.", score: 3820 },
+      { name: "Can Y.", score: 3610 },
+      { name: "Deniz A.", score: 3450 }
+    ];
+
+    const syncChannel = new BroadcastChannel('critic_classroom_bus');
+
+    const STEP_EXPLANATIONS = {
+      1: "Karar matrisi, alternatiflerin kriter bazındaki ham performans değerleridir. Başlıklardan kriterleri açıp kapatarak sistemin marjinal tepkisini ölçebilirsiniz.",
+      2: "Farklı birimlerdeki aktif kriterleri 0 ile 1 arasına getiriyoruz. Fayda kriterinde en yüksek, maliyette ise en düşük değer 1.0000 puan alır.",
+      3: "Standart Sapma (σj), alternatiflerin o kriterdeki saçılımını ölçer. Değerler birbirinden ne kadar uzaksa, kriter karar vericiye o kadar yüksek kontrast sunar.",
+      4: "Kriterler arasındaki Pearson korelasyon matrisi hesaplanır. Kriterler benzeştikçe korelasyon +1'e yaklaşır (çakışma); zıtlaştıkça -1'e yaklaşır.",
+      5: "Her kriterin taşıdığı toplam bilgi miktarı Cj hesaplanır. Yüksek sapma ve diğer kriterlerle düşük korelasyon en yüksek Cj bilgisini üretir.",
+      6: "CRITIC matematiksel objektif ağırlıkları (wj) hesaplandı. Şimdi sınıfın sezgisi ile bu matematiksel sonucu kıyaslayacağız!",
+      7: "Siz mi, Matematik mi? Katılımcıların oyladığı sezgisel ağırlıklar ile CRITIC'in objektif matematiksel ağırlıkları arasındaki dev farkı canlı olarak açığa çıkarıyoruz.",
+      8: "Duyarlılık Kaydırıcıları ('Ya şöyle olsaydı?'). Seçilen bir tedarikçinin değerini kaydırarak sıralamanın ne zaman tersine döndüğünü canlı simüle edin.",
+      9: "CRITIC, Shannon Entropisi ve Eşit Ağırlık yöntemlerini aynı veride kıyaslıyoruz. Kriter ağırlıkları ve sıra değişimleri yan yana sergilenir.",
+      10: "Büyük Kapanış Quiz'i! CRITIC ve ÇKKV yöntemlerinin mantığını ölçen 4 soruluk Kahoot tarzı canlı yarışma."
+    };
+
+    function showToast(msg) {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.innerHTML = `<span>⚡</span> <span>${msg}</span>`;
+      container.appendChild(toast);
+      requestAnimationFrame(() => toast.classList.add('show'));
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 350);
+      }, 2600);
+    }
+
+    // ==========================================
+    // 2. MATHEMATICAL ENGINE
+    // ==========================================
+    function calculateCritic(altList = state.alternatives) {
+      const activeCriteriaIndices = [];
+      state.criteria.forEach((c, idx) => {
+        if (c.enabled !== false) activeCriteriaIndices.push(idx);
+      });
+
+      const m = altList.length;
+      const n = activeCriteriaIndices.length;
+      if (n === 0) return null;
+
+      const minMax = activeCriteriaIndices.map((origIdx) => {
+        const colVals = altList.map(alt => Number(alt.values[origIdx]) || 0);
+        return { min: Math.min(...colVals), max: Math.max(...colVals), origIdx };
+      });
+
+      const normalizedMatrix = altList.map(alt => {
+        return activeCriteriaIndices.map((origIdx, j) => {
+          const val = Number(alt.values[origIdx]) || 0;
+          const { min, max } = minMax[j];
+          const crit = state.criteria[origIdx];
+          if (max === min) return 1.0;
+          return crit.type === 'benefit' ? (val - min) / (max - min) : (max - val) / (max - min);
+        });
+      });
+
+      const stdDevs = activeCriteriaIndices.map((_, j) => {
+        const col = normalizedMatrix.map(row => row[j]);
+        const mean = col.reduce((a, b) => a + b, 0) / m;
+        const variance = col.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / (m > 1 ? (m - 1) : 1);
+        return Math.sqrt(variance);
+      });
+
+      const corrMatrix = [];
+      for (let j = 0; j < n; j++) {
+        corrMatrix[j] = [];
+        const colJ = normalizedMatrix.map(row => row[j]);
+        const meanJ = colJ.reduce((a, b) => a + b, 0) / m;
+        const sJ = stdDevs[j];
+
+        for (let k = 0; k < n; k++) {
+          if (j === k) { corrMatrix[j][k] = 1.0; continue; }
+          const colK = normalizedMatrix.map(row => row[k]);
+          const meanK = colK.reduce((a, b) => a + b, 0) / m;
+          const sK = stdDevs[k];
+
+          if (sJ === 0 || sK === 0) {
+            corrMatrix[j][k] = 0.0;
+          } else {
+            let cov = 0;
+            for (let i = 0; i < m; i++) cov += (colJ[i] - meanJ) * (colK[i] - meanK);
+            corrMatrix[j][k] = Math.max(-1, Math.min(1, cov / ((m - 1) * sJ * sK)));
+          }
+        }
+      }
+
+      const sumConflict = [];
+      const C = [];
+      for (let j = 0; j < n; j++) {
+        let sumConflictVal = 0;
+        for (let k = 0; k < n; k++) sumConflictVal += (1 - corrMatrix[j][k]);
+        sumConflict.push(sumConflictVal);
+        C.push(stdDevs[j] * sumConflictVal);
+      }
+
+      const sumC = C.reduce((a, b) => a + b, 0);
+      const weights = C.map(val => (sumC === 0 ? 1 / n : val / sumC));
+
+      const scores = altList.map((alt, i) => {
+        let total = 0;
+        for (let j = 0; j < n; j++) total += normalizedMatrix[i][j] * weights[j];
+        return { id: alt.id, name: alt.name, score: total, originalIndex: i };
+      });
+
+      const ranking = [...scores].sort((a, b) => b.score - a.score);
+
+      // Entropy
+      const entropyWeights = [];
+      const entropyDivergence = [];
+      const eps = 1e-12;
+      for (let j = 0; j < n; j++) {
+        const col = normalizedMatrix.map(row => row[j]);
+        const colSum = col.reduce((a, b) => a + b, 0) + (m * eps);
+        let e_j = 0;
+        const kFactor = 1 / Math.log(m);
+        for (let i = 0; i < m; i++) {
+          const p_ij = (col[i] + eps) / colSum;
+          e_j += p_ij * Math.log(p_ij);
+        }
+        e_j = Math.max(0, Math.min(1, -kFactor * e_j));
+        entropyDivergence.push(1 - e_j);
+      }
+      const sumD = entropyDivergence.reduce((a, b) => a + b, 0);
+      for (let j = 0; j < n; j++) {
+        entropyWeights.push(sumD === 0 ? 1 / n : entropyDivergence[j] / sumD);
+      }
+
+      const equalWeights = activeCriteriaIndices.map(() => 1 / n);
+
+      const entropyScores = altList.map((alt, i) => {
+        let total = 0;
+        for (let j = 0; j < n; j++) total += normalizedMatrix[i][j] * entropyWeights[j];
+        return { id: alt.id, name: alt.name, score: total, originalIndex: i };
+      });
+      const entropyRanking = [...entropyScores].sort((a, b) => b.score - a.score);
+
+      const equalScores = altList.map((alt, i) => {
+        let total = 0;
+        for (let j = 0; j < n; j++) total += normalizedMatrix[i][j] * equalWeights[j];
+        return { id: alt.id, name: alt.name, score: total, originalIndex: i };
+      });
+      const equalRanking = [...equalScores].sort((a, b) => b.score - a.score);
+
+      return {
+        activeCriteriaIndices, minMax, normalizedMatrix, stdDevs,
+        corrMatrix, sumConflict, C, sumC, weights, scores, ranking,
+        entropyWeights, entropyScores, entropyRanking,
+        equalWeights, equalScores, equalRanking
+      };
+    }
+
+    function getClassIntuitionWeights(res) {
+      const n = res.activeCriteriaIndices.length;
+      if (manualClassWeights && manualClassWeights.length === n) return manualClassWeights;
+      if (!classVotes || classVotes.length === 0) {
+        const dummy = [0.18, 0.42, 0.12, 0.28];
+        return dummy.slice(0, n);
+      }
+      const totals = new Array(n).fill(0);
+      classVotes.forEach(vote => {
+        res.activeCriteriaIndices.forEach((origIdx, j) => {
+          totals[j] += Number(vote.scores[origIdx]) || 5;
+        });
+      });
+      const sumTotals = totals.reduce((a, b) => a + b, 0) || 1;
+      return totals.map(t => t / sumTotals);
+    }
+
+    // ==========================================
+    // 3. STEP RENDERING DISPATCHER
+    // ==========================================
+    function renderCurrentStep() {
+      if (activeChart) { activeChart.destroy(); activeChart = null; }
+      if (quizInterval) { clearInterval(quizInterval); quizInterval = null; }
+
+      const container = document.getElementById('stageContent');
+      const results = calculateCritic();
+      if (!results) return;
+
+      updateQuickStats(results);
+      document.getElementById('explanationText').innerText = STEP_EXPLANATIONS[currentStep] || '';
+
+      const stepItems = document.querySelectorAll('.step-item');
+      stepItems.forEach((item, idx) => {
+        item.classList.remove('active', 'completed');
+        if (idx + 1 === currentStep) item.classList.add('active');
+        else if (idx + 1 < currentStep) item.classList.add('completed');
+      });
+
+      document.getElementById('prevBtn').disabled = (currentStep === 1);
+      document.getElementById('nextBtn').innerText = (currentStep === 10) ? "✓ Sunumu Bitir" : "İleri (Next) →";
+
+      switch (currentStep) {
+        case 1: renderStep1(container, results); break;
+        case 2: renderStep2(container, results); break;
+        case 3: renderStep3(container, results); break;
+        case 4: renderStep4(container, results); break;
+        case 5: renderStep5(container, results); break;
+        case 6: renderStep6(container, results); break;
+        case 7: renderStep7_Intuition(container, results); break;
+        case 8: renderStep8_Ranking(container, results); break;
+        case 9: renderStep9_Benchmark(container, results); break;
+        case 10: renderStep10_Quiz(container); break;
+      }
+
+      if (window.renderMathInElement) {
+        renderMathInElement(container, {
+          delimiters: [{ left: "$$", right: "$$", display: true }, { left: "$", right: "$", display: false }],
+          throwOnError: false
+        });
+      }
+    }
+
+    // ------------------------------------------
+    // STEPS 1 TO 6
+    // ------------------------------------------
+    function renderStep1(container, res) {
+      let html = `
+        <div class="stage-header">
+          <div>
+            <div class="stage-title"><span>Step 1:</span> Initial Decision Matrix ($X$)</div>
+            <p style="color:var(--text-muted); font-size: 0.95rem; margin-top:4px;">
+              Canlı Karar Matrisi. Kriter başlığından <b>AÇ/KAPA</b> yaparak o kriterin modele etkisini test edebilirsiniz.
+            </p>
+          </div>
+          <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+            <button class="btn" onclick="openQRModal()" style="border-color:var(--accent-cyan); color:var(--accent-cyan);">📷 Katılım QR'ı</button>
+            <button class="btn" onclick="addAlternative()">+ Add Alternative</button>
+            <button class="btn" onclick="addCriterion()">+ Add Criterion</button>
+            <button class="btn" onclick="resetToDefault()">↺ Reset Sample Data</button>
+          </div>
+        </div>
+
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 140px;">Alternatives</th>
+      `;
+
+      state.criteria.forEach((c, j) => {
+        const isEnabled = (c.enabled !== false);
+        html += `
+          <th class="criterion-th ${isEnabled ? '' : 'disabled-col'}">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 4px;">
+              <span class="toggle-pill ${isEnabled ? 'active' : 'inactive'}" onclick="toggleCriterion(${j})">
+                ${isEnabled ? '● AKTİF' : '○ KAPALI'}
+              </span>
+              ${state.criteria.length > 2 ? `<button onclick="removeCriterion(${j})" style="background:none; border:none; color:var(--accent-rose); cursor:pointer;">×</button>` : ''}
+            </div>
+            <input type="text" value="${c.name}" onchange="updateCritName(${j}, this.value)" 
+                   class="${isEnabled ? '' : 'strike-text'}"
+                   style="background:transparent; border:none; color:#fff; font-weight:700; width:110px; text-align:center;">
+            <select class="type-select ${c.type}" onchange="updateCritType(${j}, this.value)" ${isEnabled ? '' : 'disabled'}>
+              <option value="benefit" ${c.type === 'benefit' ? 'selected' : ''}>Benefit (Max ▲)</option>
+              <option value="cost" ${c.type === 'cost' ? 'selected' : ''}>Cost (Min ▼)</option>
+            </select>
+          </th>
+        `;
+      });
+
+      html += `<th style="width: 50px;">Act</th></tr></thead><tbody>`;
+
+      state.alternatives.forEach((alt, i) => {
+        html += `<tr><td><input type="text" value="${alt.name}" onchange="updateAltName(${i}, this.value)" style="background:transparent; border:none; color:#94a3b8; font-weight:600; width:100%;"></td>`;
+        alt.values.forEach((val, j) => {
+          const isEnabled = (state.criteria[j].enabled !== false);
+          html += `<td class="${isEnabled ? '' : 'disabled-col'}"><input type="number" step="any" class="matrix-cell ${isEnabled ? '' : 'strike-text'}" value="${val}" ${isEnabled ? '' : 'disabled'} onchange="updateCellValue(${i}, ${j}, this.value)"></td>`;
+        });
+        html += `<td>${state.alternatives.length > 2 ? `<button onclick="removeAlternative(${i})" style="background:none; border:none; color:var(--accent-rose); cursor:pointer;">🗑</button>` : ''}</td></tr>`;
+      });
+
+      html += `</tbody></table></div>`;
+      container.innerHTML = html;
+    }
+
+    function renderStep2(container, res) {
+      let html = `
+        <div class="stage-header">
+          <div><div class="stage-title"><span>Step 2:</span> Linear Normalization ($R$)</div></div>
+          <div class="formula-badge">Benefit: $r_{ij} = \\frac{x_{ij} - x_j^{\\min}}{x_j^{\\max} - x_j^{\\min}}$ | Cost: $r_{ij} = \\frac{x_j^{\\max} - x_{ij}}{x_j^{\\max} - x_j^{\\min}}$</div>
+        </div>
+        <div class="table-container"><table><thead><tr><th>Alternatives</th>`;
+      res.activeCriteriaIndices.forEach((origIdx, j) => {
+        const c = state.criteria[origIdx];
+        html += `<th><div>${c.name}</div><div style="font-size:0.75rem; color:${c.type === 'benefit' ? 'var(--accent-emerald)' : 'var(--accent-rose)'};">${c.type.toUpperCase()} [Min: ${res.minMax[j].min}, Max: ${res.minMax[j].max}]</div></th>`;
+      });
+      html += `</tr></thead><tbody>`;
+      res.normalizedMatrix.forEach((row, i) => {
+        html += `<tr><td style="font-weight:700; color:#94a3b8;">${state.alternatives[i].name}</td>`;
+        row.forEach(v => html += `<td style="color:var(--accent-cyan); font-weight:600;">${v.toFixed(4)}</td>`);
+        html += `</tr>`;
+      });
+      html += `</tbody></table></div>`;
+      container.innerHTML = html;
+    }
+
+    function renderStep3(container, res) {
+      let html = `
+        <div class="stage-header">
+          <div><div class="stage-title"><span>Step 3:</span> Standard Deviation ($\\sigma_j$)</div></div>
+          <div class="formula-badge">$\\sigma_j = \\sqrt{\\frac{1}{m-1} \\sum_{i=1}^m (r_{ij} - \\bar{r}_j)^2}$</div>
+        </div>
+        <div style="display:grid; grid-template-columns: 1fr 340px; gap: 1.5rem; align-items:center;">
+          <div class="chart-box"><canvas id="stdDevChart"></canvas></div>
+          <div class="table-container"><table><thead><tr><th>Criterion</th><th>Std. Dev ($\\sigma_j$)</th></tr></thead><tbody>`;
+      res.activeCriteriaIndices.forEach((origIdx, j) => {
+        html += `<tr><td style="text-align:left;">${state.criteria[origIdx].name}</td><td style="color:var(--accent-cyan); font-weight:700;">${res.stdDevs[j].toFixed(4)}</td></tr>`;
+      });
+      html += `</tbody></table></div></div>`;
+      container.innerHTML = html;
+
+      setTimeout(() => {
+        const ctx = document.getElementById('stdDevChart').getContext('2d');
+        activeChart = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: res.activeCriteriaIndices.map(idx => state.criteria[idx].name),
+            datasets: [{ label: 'Std Dev', data: res.stdDevs.map(v => Number(v.toFixed(4))), backgroundColor: 'rgba(6, 182, 212, 0.65)', borderColor: '#06b6d4', borderWidth: 2, borderRadius: 6 }]
+          },
+          options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { color: '#1e293b' } }, y: { ticks: { color: '#fff' } } } }
+        });
+      }, 50);
+    }
+
+    function renderStep4(container, res) {
+      let html = `
+        <div class="stage-header">
+          <div><div class="stage-title"><span>Step 4:</span> Correlation Matrix ($r_{jk}$)</div></div>
+          <div class="formula-badge">$r_{jk} = \\text{Pearson Corr}(R_j, R_k)$</div>
+        </div>
+        <div class="table-container"><table><thead><tr><th>Criteria Pair</th>`;
+      res.activeCriteriaIndices.forEach(idx => html += `<th>${state.criteria[idx].name}</th>`);
+      html += `</tr></thead><tbody>`;
+      res.corrMatrix.forEach((row, j) => {
+        html += `<tr><td style="font-weight:700; text-align:left;">${state.criteria[res.activeCriteriaIndices[j]].name}</td>`;
+        row.forEach(val => {
+          const bg = val >= 0 ? `rgba(6, 182, 212, ${0.15 + 0.65 * val})` : `rgba(244, 63, 94, ${0.15 + 0.65 * -val})`;
+          html += `<td class="heatmap-cell" style="background:${bg}; font-weight:700;">${val.toFixed(4)}</td>`;
+        });
+        html += `</tr>`;
+      });
+      html += `</tbody></table></div>`;
+      container.innerHTML = html;
+    }
+
+    function renderStep5(container, res) {
+      let html = `
+        <div class="stage-header">
+          <div><div class="stage-title"><span>Step 5:</span> Quantity of Information ($C_j$)</div></div>
+          <div class="formula-badge">$C_j = \\sigma_j \\sum_{k=1}^n (1 - r_{jk})$</div>
+        </div>
+        <div class="table-container"><table><thead><tr><th>Criterion</th><th>$\\sigma_j$</th><th>$\\sum(1 - r_{jk})$</th><th>$C_j$</th></tr></thead><tbody>`;
+      res.activeCriteriaIndices.forEach((origIdx, j) => {
+        html += `<tr><td style="font-weight:700; text-align:left;">${state.criteria[origIdx].name}</td><td>${res.stdDevs[j].toFixed(4)}</td><td>${res.sumConflict[j].toFixed(4)}</td><td style="color:var(--accent-cyan); font-weight:800;">${res.C[j].toFixed(4)}</td></tr>`;
+      });
+      html += `<tr style="background:rgba(99, 102, 241, 0.15); font-weight:bold;"><td style="text-align:left;">TOPLAM</td><td>-</td><td>-</td><td style="color:var(--accent-indigo);">${res.sumC.toFixed(4)}</td></tr></tbody></table></div>`;
+      container.innerHTML = html;
+    }
+
+    function renderStep6(container, res) {
+      let html = `
+        <div class="stage-header">
+          <div><div class="stage-title"><span>Step 6:</span> Objective CRITIC Weights ($w_j$)</div></div>
+          <div class="formula-badge">$w_j = \\frac{C_j}{\\sum C_k}$</div>
+        </div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 2rem; align-items:center;">
+          <div class="chart-box"><canvas id="weightsDonut"></canvas></div>
+          <div class="table-container"><table><thead><tr><th>Criterion</th><th>Weight ($w_j$)</th><th>Percentage</th></tr></thead><tbody>`;
+      res.activeCriteriaIndices.forEach((origIdx, j) => {
+        html += `<tr><td style="font-weight:700; text-align:left;">${state.criteria[origIdx].name}</td><td style="color:var(--accent-cyan); font-weight:700;">${res.weights[j].toFixed(4)}</td><td style="font-weight:800; color:#fff;">${(res.weights[j]*100).toFixed(2)}%</td></tr>`;
+      });
+      html += `</tbody></table></div></div>`;
+      container.innerHTML = html;
+
+      setTimeout(() => {
+        const ctx = document.getElementById('weightsDonut').getContext('2d');
+        const palette = ['#06b6d4', '#6366f1', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6'];
+        activeChart = new Chart(ctx, {
+          type: 'doughnut',
+          data: {
+            labels: res.activeCriteriaIndices.map(idx => state.criteria[idx].name),
+            datasets: [{ data: res.weights.map(w => Number((w * 100).toFixed(2))), backgroundColor: palette, borderColor: '#0a0f1d', borderWidth: 3 }]
+          },
+          options: { responsive: true, maintainAspectRatio: false, cutout: '65%', plugins: { legend: { position: 'bottom', labels: { color: '#e2e8f0' } } } }
+        });
+      }, 50);
+    }
+
+    // ------------------------------------------
+    // STEP 7: SİZ Mİ, CRITIC Mİ?
+    // ------------------------------------------
+    function renderStep7_Intuition(container, res) {
+      const classWeights = getClassIntuitionWeights(res);
+
+      let maxGap = -1;
+      let maxGapIdx = 0;
+      res.activeCriteriaIndices.forEach((_, j) => {
+        const gap = Math.abs(classWeights[j] - res.weights[j]);
+        if (gap > maxGap) { maxGap = gap; maxGapIdx = j; }
+      });
+      const maxGapName = state.criteria[res.activeCriteriaIndices[maxGapIdx]].name;
+
+      let html = `
+        <div class="stage-header">
+          <div>
+            <div class="stage-title"><span>Step 7:</span> Sınıfın Sezgisi vs CRITIC Matematiği</div>
+            <p style="color:var(--text-muted); font-size:0.95rem; margin-top:4px;">
+              İnsan algısı ile verideki objektif varyans ve çelişkinin karşılaştırılması.
+            </p>
+          </div>
+          <div style="display:flex; gap:0.6rem;">
+            <button class="btn btn-primary" onclick="openQRModal()">📷 Katılım QR</button>
+            <button class="btn btn-accent" id="revealBtn" onclick="triggerCriticReveal()">
+              ${isCriticRevealed ? '🔄 Karşılaştırmayı Yenile' : '⚡ CRITIC Matematiğini Açıkla!'}
+            </button>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top:0.5rem;">
+          <!-- CLASS INTUITION -->
+          <div style="background: rgba(18, 26, 47, 0.7); border:1px solid var(--border-color); border-radius:14px; padding:1.4rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+              <h3 style="color:#fbbf24; font-size:1.15rem; font-weight:800;">🧠 Sınıfın Sezgisel Ağırlıkları</h3>
+              <span class="badge" style="background:#f59e0b22; color:#f59e0b; padding:4px 8px; border-radius:6px; font-size:0.75rem; font-weight:700;">
+                ${classVotes.length > 0 ? `${classVotes.length} Katılımcı Oyu` : 'Varsayılan / Elle Giriş'}
+              </span>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:0.9rem;">
+      `;
+
+      res.activeCriteriaIndices.forEach((origIdx, j) => {
+        const c = state.criteria[origIdx];
+        const pct = (classWeights[j] * 100).toFixed(1);
+        html += `
+          <div>
+            <div style="display:flex; justify-content:space-between; font-size:0.88rem; font-weight:700; margin-bottom:4px;">
+              <span>${c.name}</span>
+              <span style="color:#fbbf24;">%${pct}</span>
+            </div>
+            <div class="rank-bar-bg"><div class="rank-bar-fill" style="width:${pct}%; background:linear-gradient(90deg, #f59e0b, #d97706);"></div></div>
+          </div>
+        `;
+      });
+
+      html += `</div></div>`;
+
+      // CRITIC CARD
+      html += `<div id="criticRevealCard" style="background: rgba(18, 26, 47, 0.7); border:1px solid ${isCriticRevealed ? 'var(--accent-cyan)' : 'var(--border-color)'}; border-radius:14px; padding:1.4rem; position:relative; overflow:hidden; transition:all 0.5s ease;">`;
+
+      if (!isCriticRevealed) {
+        html += `
+          <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; text-align:center; min-height:220px;">
+            <div style="font-size:3rem; margin-bottom:1rem; animation: pulse 1s infinite alternate;">🔒</div>
+            <h4 style="color:#fff; font-size:1.2rem; font-weight:800; margin-bottom:0.5rem;">CRITIC Ağırlıkları Kilitli</h4>
+            <p style="color:var(--text-muted); font-size:0.85rem; max-width:320px; margin-bottom:1.2rem;">
+              Sınıfın sezgisel kararlarını tartıştınız mı? Butona basarak verinin objektif sonucunu açığa çıkarın.
+            </p>
+            <button class="btn btn-accent" onclick="triggerCriticReveal()">⚡ CRITIC Matematiğini Açıkla!</button>
+          </div>
+        `;
+      } else {
+        html += `
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+            <h3 style="color:var(--accent-cyan); font-size:1.15rem; font-weight:800;">📐 CRITIC Objektif Ağırlıkları</h3>
+            <span class="badge" style="background:#06b6d422; color:var(--accent-cyan); padding:4px 8px; border-radius:6px; font-size:0.75rem; font-weight:700;">Matematiksel Gerçek</span>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:0.9rem;">
+        `;
+        res.activeCriteriaIndices.forEach((origIdx, j) => {
+          const c = state.criteria[origIdx];
+          const pct = (res.weights[j] * 100).toFixed(1);
+          const isMaxGap = (j === maxGapIdx);
+          html += `
+            <div>
+              <div style="display:flex; justify-content:space-between; font-size:0.88rem; font-weight:700; margin-bottom:4px;">
+                <span>${c.name} ${isMaxGap ? '<span style="color:var(--accent-rose); font-size:0.75rem;">🚨 EN BÜYÜK FARK</span>' : ''}</span>
+                <span style="color:var(--accent-cyan);">%${pct}</span>
+              </div>
+              <div class="rank-bar-bg"><div class="rank-bar-fill" style="width:${pct}%;"></div></div>
+            </div>
+          `;
+        });
+        html += `</div>`;
+      }
+
+      html += `</div></div>`;
+
+      if (isCriticRevealed) {
+        html += `
+          <div style="margin-top:1.2rem; background:rgba(244, 63, 94, 0.1); border:1px solid var(--accent-rose); border-radius:12px; padding:1rem 1.4rem; display:flex; align-items:center; gap:1rem;">
+            <div style="font-size:2rem;">💡</div>
+            <div>
+              <div style="font-weight:800; color:#fff; font-size:1rem;">Dramatik Sezgi-Matematik Ayrışması: <u>${maxGapName}</u></div>
+              <div style="color:#e2e8f0; font-size:0.88rem; margin-top:2px;">
+                Sınıf bu kritere <b>%${(classWeights[maxGapIdx]*100).toFixed(1)}</b> önem atfederken, CRITIC verideki yüksek çatışma/sapma nedeniyle kritere <b>%${(res.weights[maxGapIdx]*100).toFixed(1)}</b> ağırlık verdi. İnsan sezgisi genellikle kalite/marka algısına odaklanırken, matematik ayırt ediciliği ödüllendirir!
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      container.innerHTML = html;
+    }
+
+    function triggerCriticReveal() {
+      isCriticRevealed = true;
+      showToast("Matematiksel sonuçlar sahneye getirildi!");
+      renderCurrentStep();
+    }
+
+    // ------------------------------------------
+    // STEP 8: RANKING & WHAT-IF SLIDERS
+    // ------------------------------------------
+    function renderStep8_Ranking(container, res) {
+      lastRankingOrder = res.ranking.map(r => r.id);
+      const maxScore = res.ranking[0].score || 1;
+
+      let html = `
+        <div class="stage-header">
+          <div>
+            <div class="stage-title"><span>Step 8:</span> Final Ranking & Sensitivity Lab ($S_i$)</div>
+            <p style="color:var(--text-muted); font-size:0.95rem; margin-top:4px;">Aşağıdaki duyarlılık kaydırıcılarıyla alternatiflerin değerlerini kaydırın.</p>
+          </div>
+          <div class="formula-badge">$S_i = \\sum_{j=1}^n r_{ij} \\cdot w_j$</div>
+        </div>
+
+        <div class="rank-list">
+      `;
+
+      res.ranking.forEach((item, idx) => {
+        const isTop = (idx === 0);
+        const percentWidth = Math.max(5, (item.score / maxScore) * 100);
+        html += `
+          <div class="rank-item ${isTop ? 'top-1' : ''}">
+            <div class="rank-badge">${isTop ? '🏆' : `#${idx + 1}`}</div>
+            <div style="min-width: 160px; font-weight:700; font-size:1.05rem; color:#fff;">${item.name}</div>
+            <div class="rank-bar-bg"><div class="rank-bar-fill" style="width: ${percentWidth}%;"></div></div>
+            <div class="rank-score" style="color: ${isTop ? 'var(--accent-amber)' : 'var(--accent-cyan)'};">${item.score.toFixed(4)}</div>
+          </div>
+        `;
+      });
+      html += `</div>`;
+
+      const selectedAlt = state.alternatives[selectedSimAltIdx] || state.alternatives[0];
+      html += `
+        <div class="what-if-panel">
+          <div class="what-if-header">
+            <div class="what-if-title"><span>⚡</span> Ya Şöyle Olsaydı? (Duyarlılık Kaydırıcıları)</div>
+            <div style="display:flex; align-items:center; gap:0.8rem;">
+              <select onchange="changeSimAlternative(this.value)" style="background:#0f172a; border:1px solid var(--border-color); color:#fff; padding:0.35rem 0.75rem; border-radius:8px; font-weight:700;">
+      `;
+      state.alternatives.forEach((alt, idx) => {
+        html += `<option value="${idx}" ${idx === selectedSimAltIdx ? 'selected' : ''}>${alt.name}</option>`;
+      });
+      html += `
+              </select>
+              <button class="btn" onclick="resetSensitivity()" style="border-color:var(--accent-amber); color:var(--accent-amber);">↺ Sıfırla</button>
+            </div>
+          </div>
+          <div class="slider-grid">
+      `;
+
+      res.activeCriteriaIndices.forEach((origIdx) => {
+        const crit = state.criteria[origIdx];
+        const baseVal = baselineData.alternatives[selectedSimAltIdx].values[origIdx];
+        const currentVal = selectedAlt.values[origIdx];
+        const minVal = Math.round((baseVal * 0.5) * 100) / 100;
+        const maxVal = Math.round((baseVal * 1.5) * 100) / 100;
+        const stepVal = Math.max(0.1, (maxVal - minVal) / 100);
+
+        html += `
+          <div class="slider-card">
+            <div class="slider-label"><span>${crit.name}</span><span class="slider-val-tag">${Number(currentVal).toFixed(2)}</span></div>
+            <input type="range" min="${minVal}" max="${maxVal}" step="${stepVal}" value="${currentVal}" oninput="handleSliderChange(${selectedSimAltIdx}, ${origIdx}, this.value)">
+          </div>
+        `;
+      });
+      html += `</div></div>`;
+      container.innerHTML = html;
+    }
+
+    // ------------------------------------------
+    // STEP 9: METHOD BENCHMARK
+    // ------------------------------------------
+    function renderStep9_Benchmark(container, res) {
+      let html = `
+        <div class="stage-header">
+          <div><div class="stage-title"><span>Step 9:</span> CRITIC vs Diğer Yöntemler</div></div>
+          <div class="formula-badge">Entropy: $e_j = -\\frac{1}{\\ln m}\\sum p_{ij}\\ln p_{ij}$ | Equal: $w_j = 1/n$</div>
+        </div>
+        <div class="chart-box" style="height: 310px;"><canvas id="benchChart"></canvas></div>
+        <div class="table-container"><table><thead><tr><th style="text-align:left;">Alternatif</th><th>CRITIC Sırası</th><th>Entropi Sırası</th><th>Eşit Ağırlık Sırası</th><th>Durum</th></tr></thead><tbody>`;
+      state.alternatives.forEach(alt => {
+        const cr = res.ranking.findIndex(r => r.id === alt.id) + 1;
+        const er = res.entropyRanking.findIndex(r => r.id === alt.id) + 1;
+        const eqr = res.equalRanking.findIndex(r => r.id === alt.id) + 1;
+        const div = (cr !== er || cr !== eqr);
+        html += `
+          <tr ${div ? 'style="background: rgba(245, 158, 11, 0.08);"' : ''}>
+            <td style="font-weight:700; text-align:left;">${alt.name}</td>
+            <td style="color:var(--accent-cyan); font-weight:700;">#${cr}</td>
+            <td style="color:var(--accent-purple); font-weight:700;">#${er}</td>
+            <td style="color:var(--accent-amber); font-weight:700;">#${eqr}</td>
+            <td>${div ? '<span style="color:#fbbf24; font-weight:700;">⚠️ Sırası Değişti</span>' : '<span style="color:#34d399; font-weight:700;">✓ Tutarlı</span>'}</td>
+          </tr>
+        `;
+      });
+      html += `</tbody></table></div>`;
+      container.innerHTML = html;
+
+      setTimeout(() => {
+        const ctx = document.getElementById('benchChart').getContext('2d');
+        activeChart = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: res.activeCriteriaIndices.map(idx => state.criteria[idx].name),
+            datasets: [
+              { label: 'CRITIC', data: res.weights.map(w => Number((w*100).toFixed(2))), backgroundColor: '#06b6d4', borderRadius: 4 },
+              { label: 'Shannon Entropi', data: res.entropyWeights.map(w => Number((w*100).toFixed(2))), backgroundColor: '#a855f7', borderRadius: 4 },
+              { label: 'Eşit Ağırlık', data: res.equalWeights.map(w => Number((w*100).toFixed(2))), backgroundColor: '#f59e0b', borderRadius: 4 }
+            ]
+          },
+          options: { responsive: true, maintainAspectRatio: false, scales: { x: { ticks: { color: '#fff' } }, y: { ticks: { color: '#94a3b8' } } } }
+        });
+      }, 50);
+    }
+
+    // ------------------------------------------
+    // STEP 10: QUIZ
+    // ------------------------------------------
+    function renderStep10_Quiz(container) {
+      if (quizState === 'podium') {
+        renderQuizPodium(container);
+        return;
+      }
+
+      const q = QUIZ_QUESTIONS[currentQuizIdx];
+      const colors = ['btn-red', 'btn-blue', 'btn-yellow', 'btn-green'];
+
+      let html = `
+        <div class="stage-header">
+          <div><div class="stage-title"><span>Step 10:</span> Büyük Kapanış Quiz'i (Soru ${currentQuizIdx + 1} / ${QUIZ_QUESTIONS.length})</div></div>
+          <div style="display:flex; gap:0.6rem; align-items:center;">
+            <button class="btn btn-primary" onclick="openQRModal()">📷 Katılım QR</button>
+            <div class="timer-circle ${quizTimer <= 5 ? 'warning' : ''}" id="quizTimerDisplay">${quizTimer}</div>
+          </div>
+        </div>
+
+        <div class="quiz-container">
+          <div class="question-title">${q.q}</div>
+          <div class="quiz-options-grid">
+      `;
+
+      q.options.forEach((opt, idx) => {
+        let extraClass = colors[idx];
+        if (quizState === 'reveal') {
+          if (idx === q.correct) extraClass += ' correct-highlight';
+          else extraClass += ' dimmed';
+        }
+
+        html += `
+          <button class="quiz-btn ${extraClass}" onclick="handleHostOptionClick(${idx})">
+            <span style="font-size:1.6rem;">${q.symbols[idx]}</span>
+            <span>${opt}</span>
+            ${quizState === 'reveal' ? `<span style="margin-left:auto; font-size:1.1rem; font-family:'JetBrains Mono';">${quizAnswers[idx]} Oy</span>` : ''}
+          </button>
+        `;
+      });
+
+      html += `</div>`;
+
+      if (quizState === 'reveal') {
+        html += `
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-top:1rem; padding:0.5rem 0;">
+            <div style="font-size:1rem; font-weight:700; color:var(--accent-emerald);">
+              ✓ Doğru Cevap: <u>${q.options[q.correct]}</u>
+            </div>
+            <button class="btn btn-accent" onclick="nextQuizStep()" style="font-size:1rem; padding:0.6rem 1.4rem;">
+              ${currentQuizIdx + 1 === QUIZ_QUESTIONS.length ? '🏆 Podyumu Gör!' : 'Sonraki Soru →'}
+            </button>
+          </div>
+        `;
+      }
+
+      html += `</div>`;
+      container.innerHTML = html;
+
+      if (quizState === 'question') {
+        startQuizTimer();
+      }
+    }
+
+    function startQuizTimer() {
+      if (quizInterval) clearInterval(quizInterval);
+      quizInterval = setInterval(() => {
+        quizTimer--;
+        const timerEl = document.getElementById('quizTimerDisplay');
+        if (timerEl) {
+          timerEl.innerText = quizTimer;
+          if (quizTimer <= 5) timerEl.classList.add('warning');
+        }
+        if (quizTimer <= 0) {
+          clearInterval(quizInterval);
+          quizState = 'reveal';
+          renderCurrentStep();
+        }
+      }, 1000);
+    }
+
+    function handleHostOptionClick(idx) {
+      if (quizState === 'question') {
+        quizAnswers[idx]++;
+        clearInterval(quizInterval);
+        quizState = 'reveal';
+        renderCurrentStep();
+      }
+    }
+
+    function nextQuizStep() {
+      if (currentQuizIdx + 1 < QUIZ_QUESTIONS.length) {
+        currentQuizIdx++;
+        quizTimer = 20;
+        quizAnswers = [0, 0, 0, 0];
+        quizState = 'question';
+        renderCurrentStep();
+      } else {
+        quizState = 'podium';
+        renderCurrentStep();
+        triggerConfetti();
+      }
+    }
+
+    function renderQuizPodium(container) {
+      container.innerHTML = `
+        <div class="stage-header">
+          <div><div class="stage-title"><span>🏆</span> Büyük Final: Podyum & Şampiyonlar</div></div>
+          <button class="btn" onclick="restartQuiz()">↺ Quiz'i Yeniden Başlat</button>
+        </div>
+
+        <div style="text-align:center; padding: 1rem 0;">
+          <h2 style="font-size:2rem; font-weight:800; color:#fff;">Tebrikler! Quiz Tamamlandı 🎉</h2>
+          <p style="color:var(--text-muted); font-size:1rem;">Doğruluk ve hıza göre günün en başarılı katılımcıları:</p>
+
+          <div class="podium-box">
+            <div class="podium-step podium-2">
+              <div style="font-size:2rem; margin-bottom:8px;">🥈</div>
+              <div class="podium-name">${leaderboard[1].name}</div>
+              <div class="podium-score">${leaderboard[1].score} Puan</div>
+            </div>
+            <div class="podium-step podium-1">
+              <div style="font-size:2.8rem; margin-bottom:8px;">👑</div>
+              <div class="podium-name">${leaderboard[0].name}</div>
+              <div class="podium-score">${leaderboard[0].score} Puan</div>
+            </div>
+            <div class="podium-step podium-3">
+              <div style="font-size:1.8rem; margin-bottom:8px;">🥉</div>
+              <div class="podium-name">${leaderboard[2].name}</div>
+              <div class="podium-score">${leaderboard[2].score} Puan</div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function restartQuiz() {
+      currentQuizIdx = 0;
+      quizTimer = 20;
+      quizAnswers = [0, 0, 0, 0];
+      quizState = 'question';
+      renderCurrentStep();
+    }
+
+    // ==========================================
+    // 4. STANDALONE OFFLINE QR MOTORU & MODAL
+    // ==========================================
+    function openQRModal() {
+      const modal = document.getElementById('qrModal');
+      const warningEl = document.getElementById('fileProtocolWarning');
+      const inputEl = document.getElementById('manualUrlInput');
+
+      let currentUrl = window.location.href.split('#')[0] + '#vote';
+      if (window.location.protocol === 'file:') {
+        warningEl.style.display = 'block';
+      } else {
+        warningEl.style.display = 'none';
+      }
+
+      inputEl.value = currentUrl;
+      generateQRCode(currentUrl);
+
+      document.getElementById('modalParticipantCount').innerText = classVotes.length;
+      modal.classList.add('open');
+    }
+
+    function closeQRModal() {
+      document.getElementById('qrModal').classList.remove('open');
+    }
+
+    function generateQRCode(text) {
+      const container = document.getElementById('qrcodeCanvas');
+      container.innerHTML = ''; // Temizle
+      if (typeof QRCode !== 'undefined') {
+        qrcodeObj = new QRCode(container, {
+          text: text,
+          width: 200,
+          height: 200,
+          colorDark: "#000000",
+          colorLight: "#ffffff",
+          correctLevel: QRCode.CorrectLevel.M
+        });
+      } else {
+        container.innerHTML = `<div style="color:#000; font-size:0.8rem; padding:10px;">Link: ${text}</div>`;
+      }
+    }
+
+    function updateQRCodeFromInput() {
+      const url = document.getElementById('manualUrlInput').value.trim();
+      if (url) {
+        generateQRCode(url);
+        showToast("QR kod girilen linke göre güncellendi!");
+      }
+    }
+
+    function simulateStudentVotes() {
+      const names = ["Ahmet", "Zeynep", "Burak", "Selin", "Emre", "Büşra", "Kemal", "Gizem", "Oğuz", "Ece", "Kaan", "Melis", "Berk", "İrem", "Onur", "Damla", "Tolga", "Ezgi", "Yusuf", "Defne", "Furkan", "Aslı", "Deniz", "Cem", "Hande"];
+      names.forEach(name => {
+        classVotes.push({
+          name,
+          scores: [
+            Math.floor(Math.random() * 4) + 4,
+            Math.floor(Math.random() * 3) + 8,
+            Math.floor(Math.random() * 4) + 3,
+            Math.floor(Math.random() * 3) + 7
+          ]
+        });
+      });
+      document.getElementById('modalParticipantCount').innerText = classVotes.length;
+      updateVoterCounts();
+      showToast(`${names.length} öğrencinin sezgisel oyu toplandı!`);
+    }
+
+    // ==========================================
+    // 5. CANLI TELEFON SİMÜLATÖRÜ (DRAWER)
+    // ==========================================
+    function togglePhoneDrawer() {
+      const drawer = document.getElementById('phoneDrawer');
+      drawer.classList.toggle('open');
+      if (drawer.classList.contains('open')) {
+        renderSimulatorSliders();
+      }
+    }
+
+    function renderSimulatorSliders() {
+      const container = document.getElementById('simSlidersContainer');
+      const res = calculateCritic();
+      let html = '';
+      res.activeCriteriaIndices.forEach((origIdx) => {
+        const c = state.criteria[origIdx];
+        html += `
+          <div>
+            <div style="display:flex; justify-content:space-between; font-weight:700; color:#cbd5e1; font-size:0.8rem;">
+              <span>${c.name}</span>
+              <span id="simValTag_${origIdx}" style="color:var(--accent-cyan); font-family:'JetBrains Mono';">8</span>
+            </div>
+            <input type="range" min="1" max="10" value="8" style="width:100%;" oninput="document.getElementById('simValTag_${origIdx}').innerText = this.value">
+          </div>
+        `;
+      });
+      container.innerHTML = html;
+    }
+
+    function submitSimVote() {
+      const name = document.getElementById('simVoterName').value.trim() || 'Simüle Öğrenci';
+      const scores = state.criteria.map((_, idx) => {
+        const el = document.getElementById(`simValTag_${idx}`);
+        return el ? parseFloat(el.innerText) : 5;
+      });
+
+      classVotes.push({ name, scores });
+      updateVoterCounts();
+      showToast(`${name} oy verdi!`);
+      if (currentStep === 7) renderCurrentStep();
+    }
+
+    function registerVoteFromSim(optIdx) {
+      quizAnswers[optIdx]++;
+      showToast(`Simülatörden ${QUIZ_QUESTIONS[currentQuizIdx].symbols[optIdx]} seçeneğine oy verildi!`);
+      if (currentStep === 10) renderCurrentStep();
+    }
+
+    // Manual Modal
+    function openManualIntuitionEntry() {
+      closeQRModal();
+      const modal = document.getElementById('manualEntryModal');
+      const container = document.getElementById('manualInputsContainer');
+      const res = calculateCritic();
+      let html = '';
+      res.activeCriteriaIndices.forEach((origIdx, j) => {
+        const c = state.criteria[origIdx];
+        html += `
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <label style="color:#fff; font-weight:700; font-size:0.9rem;">${c.name}:</label>
+            <input type="number" id="manualScore_${j}" min="1" max="10" step="0.5" value="${j === 1 ? 9 : (j === 3 ? 8 : 5)}"
+                   style="width:90px; background:#0f172a; border:1px solid var(--border-color); color:#fff; padding:0.4rem; border-radius:6px; text-align:center;">
+          </div>
+        `;
+      });
+      container.innerHTML = html;
+      modal.classList.add('open');
+    }
+
+    function closeManualModal() {
+      document.getElementById('manualEntryModal').classList.remove('open');
+    }
+
+    function saveManualIntuition() {
+      const res = calculateCritic();
+      const n = res.activeCriteriaIndices.length;
+      const vals = [];
+      for (let j = 0; j < n; j++) {
+        vals.push(parseFloat(document.getElementById(`manualScore_${j}`).value) || 5);
+      }
+      const sumVals = vals.reduce((a, b) => a + b, 0) || 1;
+      manualClassWeights = vals.map(v => v / sumVals);
+      closeManualModal();
+      showToast("Elle girilen sınıf ortalamaları kaydedildi!");
+      renderCurrentStep();
+    }
+
+    function updateVoterCounts() {
+      const cnt = classVotes.length;
+      document.getElementById('headerVoterCount').innerText = cnt;
+      document.getElementById('statVoterCount').innerText = cnt;
+    }
+
+    function updateQuickStats(res) {
+      updateVoterCounts();
+      document.getElementById('statActiveCritCount').innerText = res.activeCriteriaIndices.length;
+      const maxWIdx = res.weights.indexOf(Math.max(...res.weights));
+      const critName = state.criteria[res.activeCriteriaIndices[maxWIdx]].name;
+      document.getElementById('statDivergenceTag').innerText = critName;
+    }
+
+    // ==========================================
+    // 6. MOBILE CLIENT VIEW
+    // ==========================================
+    function initMobileClient() {
+      document.getElementById('presenterApp').style.display = 'none';
+      document.getElementById('mobileApp').style.display = 'block';
+
+      const res = calculateCritic();
+      const container = document.getElementById('mobileSlidersContainer');
+      let html = '';
+
+      res.activeCriteriaIndices.forEach((origIdx) => {
+        const c = state.criteria[origIdx];
+        html += `
+          <div>
+            <div style="display:flex; justify-content:space-between; font-weight:700; color:#cbd5e1; font-size:0.9rem; margin-bottom:4px;">
+              <span>${c.name}</span>
+              <span id="mobileVal_${origIdx}" style="color:var(--accent-cyan); font-family:'JetBrains Mono';">8</span>
+            </div>
+            <input type="range" min="1" max="10" value="8" style="width:100%;" oninput="document.getElementById('mobileVal_${origIdx}').innerText = this.value">
+          </div>
+        `;
+      });
+      container.innerHTML = html;
+    }
+
+    function submitMobileVote() {
+      const name = document.getElementById('voterNickname').value.trim() || 'Misafir Öğrenci';
+      const scores = state.criteria.map((_, idx) => {
+        const el = document.getElementById(`mobileVal_${idx}`);
+        return el ? parseFloat(el.innerText) : 5;
+      });
+
+      syncChannel.postMessage({ type: 'NEW_VOTE', vote: { name, scores } });
+      document.getElementById('mobileVoteScreen').style.display = 'none';
+      document.getElementById('mobileQuizScreen').style.display = 'block';
+    }
+
+    function submitMobileQuizAnswer(optIdx) {
+      syncChannel.postMessage({ type: 'QUIZ_ANSWER', optionIndex: optIdx });
+      document.getElementById('mobileAnswerConfirmed').style.display = 'block';
+      setTimeout(() => {
+        document.getElementById('mobileAnswerConfirmed').style.display = 'none';
+      }, 1500);
+    }
+
+    syncChannel.onmessage = (event) => {
+      const data = event.data;
+      if (data.type === 'NEW_VOTE') {
+        classVotes.push(data.vote);
+        updateVoterCounts();
+        if (currentStep === 7) renderCurrentStep();
+      } else if (data.type === 'QUIZ_ANSWER') {
+        quizAnswers[data.optionIndex]++;
+        if (currentStep === 10) renderCurrentStep();
+      }
+    };
+
+    // Confetti
+    function triggerConfetti() {
+      const canvas = document.getElementById('confettiCanvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      const pieces = [];
+      const colors = ['#06b6d4', '#6366f1', '#f59e0b', '#10b981', '#f43f5e', '#ffffff'];
+      for (let i = 0; i < 150; i++) {
+        pieces.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height - canvas.height,
+          size: Math.random() * 8 + 4,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          speedY: Math.random() * 4 + 2,
+          speedX: Math.random() * 2 - 1,
+          rot: Math.random() * 360
+        });
+      }
+
+      let frames = 0;
+      function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        pieces.forEach(p => {
+          p.y += p.speedY;
+          p.x += p.speedX;
+          p.rot += 2;
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate((p.rot * Math.PI) / 180);
+          ctx.fillStyle = p.color;
+          ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size);
+          ctx.restore();
+        });
+        frames++;
+        if (frames < 240) requestAnimationFrame(animate);
+        else ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+      animate();
+    }
+
+    // Navigation & Keys
+    function goToStep(s) { if (s >= 1 && s <= 10) { currentStep = s; renderCurrentStep(); } }
+    function nextStep() { if (currentStep < 10) { currentStep++; renderCurrentStep(); } }
+    function prevStep() { if (currentStep > 1) { currentStep--; renderCurrentStep(); } }
+
+    window.addEventListener('keydown', (e) => {
+      if (['INPUT', 'SELECT'].includes(document.activeElement.tagName)) return;
+      if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') {
+        e.preventDefault(); nextStep();
+      } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+        e.preventDefault(); prevStep();
+      } else if (e.key.toLowerCase() === 'f') {
+        toggleFullScreen();
+      } else if (e.key.toLowerCase() === 'q') {
+        openQRModal();
+      }
+    });
+
+    function toggleFullScreen() {
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(() => {});
+      else if (document.exitFullscreen) document.exitFullscreen();
+    }
+
+    function toggleCriterion(critIdx) {
+      const activeCount = state.criteria.filter(c => c.enabled !== false).length;
+      const targetState = !(state.criteria[critIdx].enabled !== false);
+      if (!targetState && activeCount <= 2) {
+        showToast("⚠️ En az 2 kriter açık kalmalıdır!");
+        return;
+      }
+      state.criteria[critIdx].enabled = targetState;
+      showToast(`${state.criteria[critIdx].name} kriteri ${targetState ? 'açıldı' : 'kapatıldı'}.`);
+      renderCurrentStep();
+    }
+
+    function updateCellValue(a, c, v) { state.alternatives[a].values[c] = parseFloat(v) || 0; baselineData.alternatives[a].values[c] = parseFloat(v) || 0; renderCurrentStep(); }
+    function updateCritType(c, t) { state.criteria[c].type = t; baselineData.criteria[c].type = t; renderCurrentStep(); }
+    function updateCritName(c, n) { state.criteria[c].name = n; baselineData.criteria[c].name = n; renderCurrentStep(); }
+    function updateAltName(a, n) { state.alternatives[a].name = n; baselineData.alternatives[a].name = n; renderCurrentStep(); }
+
+    function addCriterion() {
+      const id = 'c' + (state.criteria.length + 1);
+      state.criteria.push({ id, name: `Crit ${state.criteria.length + 1}`, type: 'benefit', enabled: true });
+      state.alternatives.forEach(alt => alt.values.push(10));
+      baselineData = JSON.parse(JSON.stringify(state));
+      renderCurrentStep();
+    }
+    function removeCriterion(idx) {
+      if (state.criteria.length <= 2) return;
+      state.criteria.splice(idx, 1);
+      state.alternatives.forEach(alt => alt.values.splice(idx, 1));
+      baselineData = JSON.parse(JSON.stringify(state));
+      renderCurrentStep();
+    }
+    function addAlternative() {
+      const id = 'a' + (state.alternatives.length + 1);
+      state.alternatives.push({ id, name: `Supplier T${state.alternatives.length + 1}`, values: state.criteria.map(() => 50) });
+      baselineData = JSON.parse(JSON.stringify(state));
+      renderCurrentStep();
+    }
+    function removeAlternative(idx) {
+      if (state.alternatives.length <= 2) return;
+      state.alternatives.splice(idx, 1);
+      baselineData = JSON.parse(JSON.stringify(state));
+      renderCurrentStep();
+    }
+    function resetToDefault() {
+      state = JSON.parse(JSON.stringify(DEFAULT_DATA));
+      baselineData = JSON.parse(JSON.stringify(DEFAULT_DATA));
+      classVotes = [];
+      manualClassWeights = null;
+      isCriticRevealed = false;
+      renderCurrentStep();
+    }
+    function changeSimAlternative(idx) { selectedSimAltIdx = parseInt(idx, 10); renderCurrentStep(); }
+    function handleSliderChange(altIdx, critIdx, newVal) {
+      state.alternatives[altIdx].values[critIdx] = parseFloat(newVal);
+      const prevOrder = [...lastRankingOrder];
+      const newResults = calculateCritic();
+      const newOrder = newResults.ranking.map(r => r.id);
+      if (prevOrder.length && JSON.stringify(prevOrder) !== JSON.stringify(newOrder)) {
+        showToast("Sıralama değişti! Yeni lider: " + newResults.ranking[0].name);
+      }
+      renderCurrentStep();
+    }
+    function resetSensitivity() {
+      state.alternatives = JSON.parse(JSON.stringify(baselineData.alternatives));
+      showToast("Orijinal değerlere dönüldü.");
+      renderCurrentStep();
+    }
+
+    function exportToCSV() {
+      const res = calculateCritic();
+      let csv = 'CRITIC Results\n\nCriterion,Weight,Percentage\n';
+      res.activeCriteriaIndices.forEach((origIdx, j) => {
+        csv += `"${state.criteria[origIdx].name}",${res.weights[j].toFixed(4)},${(res.weights[j]*100).toFixed(2)}%\n`;
+      });
+      csv += '\nRank,Alternative,Score\n';
+      res.ranking.forEach((r, idx) => {
+        csv += `${idx + 1},"${r.name}",${r.score.toFixed(4)}\n`;
+      });
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'critic_results.csv';
+      link.click();
+    }
+
+    // ==========================================
+    // 7. INIT ROUTER
+    // ==========================================
+    window.onload = () => {
+      if (window.location.hash === '#vote') {
+        initMobileClient();
+      } else {
+        renderCurrentStep();
+      }
+    };
+  </script>
+</body>
+</html>
